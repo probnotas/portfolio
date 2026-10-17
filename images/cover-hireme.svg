@@ -1,0 +1,10 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1220" viewBox="0 0 900 1220">
+  <!-- Original cover artwork for a project card -->
+  <defs><filter id="g"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .05 0"/></filter></defs>
+  <rect width="900" height="1220" fill="#101013"/>
+  <text x="70" y="120" font-family="Menlo, monospace" font-size="24" fill="#8a8a96" letter-spacing="4">UNCONVENTIONAL</text>
+  <rect x="110" y="330" width="680" height="96" rx="48" fill="#ffffff"/><circle cx="170" cy="378" r="18" fill="none" stroke="#9a9aa6" stroke-width="4"/><line x1="183" y1="391" x2="198" y2="406" stroke="#9a9aa6" stroke-width="4" stroke-linecap="round"/><text x="220" y="390" font-family="Helvetica Neue, Arial, sans-serif" font-size="34" fill="#1a1a22">your own name<tspan fill="#1a73e8">|</tspan></text><rect x="110" y="480" width="680" height="200" rx="18" fill="#17171c"/><text x="150" y="540" font-family="Helvetica Neue, Arial, sans-serif" font-size="30" fill="#8ab4f8">Hire me, unconventionally</text><text x="150" y="588" font-family="Helvetica Neue, Arial, sans-serif" font-size="24" fill="#9a9aa6">The page that shows up when you search</text><text x="150" y="624" font-family="Helvetica Neue, Arial, sans-serif" font-size="24" fill="#9a9aa6">your own name.</text>
+  <text x="70" y="930" font-family="Helvetica Neue, Arial, sans-serif" font-size="64" font-weight="500" fill="#f2efe8" letter-spacing="-1">HireMe</text><text x="70" y="1002" font-family="Helvetica Neue, Arial, sans-serif" font-size="64" font-weight="500" fill="#f2efe8" letter-spacing="-1">Unconventional</text>
+  <text x="70" y="1108" font-family="Helvetica Neue, Arial, sans-serif" font-size="28" fill="#9a9aa6">A hiring strategy that lives in CEOs' search results</text>
+  <rect width="900" height="1220" filter="url(#g)"/>
+</svg>

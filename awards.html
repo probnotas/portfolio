@@ -1,0 +1,62 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Awards | Armaan Sharma</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=Jost:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  body { background: var(--night); color: #fff; min-height: 100vh; }
+  .awards { width: min(980px, calc(100% - 48px)); margin: 0 auto; padding: 18vh 0 14vh; }
+  .awards h1 {
+    font-family: var(--name); font-weight: 500; font-size: clamp(48px, 9vw, 140px); line-height: .95; letter-spacing: -.01em;
+    margin-bottom: 8vh;
+  }
+  .awards ol { list-style: none; margin: 0; padding: 0; border-top: 1px solid var(--line); }
+  .award {
+    display: grid; grid-template-columns: 140px 1fr; gap: 24px; padding: 28px 0; border-bottom: 1px solid var(--line);
+    opacity: 0; transform: translateY(16px); transition: opacity .8s ease, transform .9s cubic-bezier(.2, .8, .2, 1);
+  }
+  .award.in { opacity: 1; transform: none; }
+  .award time { font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); padding-top: 8px; }
+  .award h2 { font-size: clamp(22px, 2.4vw, 32px); font-weight: 400; line-height: 1.2; }
+  .award p { margin-top: 8px; font-size: 14px; line-height: 1.55; color: #b5b5c3; max-width: 56ch; }
+  .back { display: inline-block; margin-top: 8vh; font-size: 12px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: var(--mute); transition: color .25s; }
+  .back:hover { color: #fff; }
+  @media (max-width: 640px) { .award { grid-template-columns: 1fr; gap: 6px; } .award time { padding-top: 0; } }
+  @media (prefers-reduced-motion: reduce) { .award { opacity: 1; transform: none; transition: none; } }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a class="label roll" href="https://embodiedpredictiveintelligence.vercel.app" target="_blank" rel="noopener"><span data-t="Research">Research</span></a>
+  <a class="header__center" href="index.html">Armaan Sharma</a>
+  <a class="label roll header__right" href="index.html#contact"><span data-t="Contact">Contact</span></a>
+</header>
+
+<main class="awards">
+  <h1>Awards</h1>
+  <!-- Add new awards at the top: <li class="award"><time>Year</time><div><h2>Title</h2><p>Detail</p></div></li> -->
+  <ol>
+    <li class="award"><time>2026</time><div><h2>People's Choice Award</h2><p>TKS Global Hackathon</p></div></li>
+    <li class="award"><time>2026</time><div><h2>TKS Moonshot Winner</h2><p>Toronto Tech Week</p></div></li>
+    <li class="award"><time>2026</time><div><h2>Placed top seven out of 4,000+ students</h2><p>UN Global Challenge</p></div></li>
+    <li class="award"><time>2026</time><div><h2>6th Place — LovHack Hackathon</h2><p>Out of 1,000+ participants</p></div></li>
+    <li class="award"><time>2025</time><div><h2>Top 5 in Canada — Microsoft Consulting Challenge</h2><p>Microsoft Canada</p></div></li>
+    <li class="award"><time>2025</time><div><h2>Provincial Design Award — Runner Up</h2><p>Ontario VEX Robotics Championship · Team 1140M</p></div></li>
+  </ol>
+  <a class="back" href="index.html">← Back home</a>
+</main>
+
+<script>
+  const io = new IntersectionObserver(items => items.forEach(it => {
+    if (it.isIntersecting) { it.target.classList.add("in"); io.unobserve(it.target); }
+  }), { rootMargin: "0px 0px -8% 0px" });
+  document.querySelectorAll(".award").forEach((el, i) => { el.style.transitionDelay = i * 90 + "ms"; io.observe(el); });
+</script>
+</body>
+</html>

@@ -1,0 +1,784 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Armaan Sharma</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter+Tight:wght@400;500;600&family=Jost:wght@500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="common.css">
+<style>
+  /* Header name only appears once the big one has scrolled away */
+  .header__center { opacity: 0; transition: opacity .5s ease; }
+  .header__center.show { opacity: 1; }
+
+  /* ---------- Hero name (sits under the photos) ---------- */
+  .name {
+    position: fixed; left: 0; right: 0; top: 50%; z-index: 1;
+    display: flex; justify-content: center; pointer-events: none;
+    will-change: transform;
+  }
+  .name h1 {
+    font-family: var(--name); font-weight: 500;
+    font-size: clamp(28px, 2.6vw, 60px); letter-spacing: .02em; line-height: 1;
+    transform: translateY(-50%);
+    opacity: 0; transition: opacity 1.1s ease .15s;
+  }
+  .ready .name h1 { opacity: 1; }
+
+  /* ---------- WebGL photo layer ---------- */
+  #stage { position: fixed; inset: 0; z-index: 2; width: 100%; height: 100%; pointer-events: none; }
+  body.hovering { cursor: pointer; }
+  .spacer { position: relative; }
+
+  /* ---------- About ---------- */
+  .about {
+    position: sticky; top: 0; z-index: 10; background: transparent;   /* pins while the deck rises over it; top set by script */
+    padding: 116px 24px 160px; display: flex; flex-direction: column; align-items: center;
+  }
+  .portrait {
+    position: relative; width: clamp(180px, 13.5vw, 280px); aspect-ratio: 4 / 5; overflow: hidden;
+    background: linear-gradient(160deg, #d6d6d6, #6d6d72);
+  }
+  .portrait img { position: absolute; inset: 0; width: 100%; height: 100%; object-fit: cover; filter: grayscale(1); }
+  .portrait span {
+    position: absolute; inset: 0; display: grid; place-items: center;
+    font-size: 10px; font-weight: 600; letter-spacing: .1em; text-transform: uppercase; color: #fff;
+  }
+  .about__text { margin-top: 84px; width: min(940px, 100%); text-align: center; color: #2a2a33;
+    -webkit-mask-image: linear-gradient(to bottom, #000 55%, rgba(0, 0, 0, .3) 100%);
+            mask-image: linear-gradient(to bottom, #000 55%, rgba(0, 0, 0, .3) 100%); }
+  .about__text p { font-size: clamp(24px, 2.35vw, 46px); line-height: 1.26; letter-spacing: -.012em; }
+  .about__text p + p { margin-top: 1.05em; }
+  .reveal { opacity: 0; transform: translateY(36px); filter: blur(6px);
+    transition: opacity 1.4s ease, transform 1.6s cubic-bezier(.2, .8, .2, 1), filter 1.4s ease; }
+  .reveal.in { filter: none; }
+  .reveal.in { opacity: 1; transform: none; }
+
+
+
+  /* ---------- Story chapters (pinned scroll sequence) ---------- */
+  .chapter {
+    position: relative; z-index: 11;
+    height: 800vh;                 /* scroll length; the script sizes this to the number of photos */
+    pointer-events: none;
+  }
+  .chapter__pin { position: sticky; top: 0; height: 100vh; overflow: hidden; }
+  .chapter__card {
+    position: absolute; left: 50%; top: 0; will-change: transform;
+    box-shadow: 0 -1px 0 rgba(255, 255, 255, .15);
+  }
+  .chapter__card div { width: 100%; height: 100%; }
+  .chapter__card { cursor: pointer; pointer-events: auto; }
+  .chapter__label, .chapter__text { position: absolute; top: 50%; z-index: 3; opacity: 0; will-change: transform, opacity; }
+  .chapter__label {
+    left: 2vw; font-size: clamp(12px, 1vw, 18px); letter-spacing: .06em; text-transform: uppercase; color: #22222a;
+  }
+  .chapter__text { right: 2.4vw; width: min(25vw, 420px); font-size: clamp(14px, 1.05vw, 18px); line-height: 1.5; color: #2a2a33; }
+  .chapter__text p + p { margin-top: .8em; }
+  .chapter__text a { color: #1f4fff; text-decoration: underline; text-underline-offset: .15em; pointer-events: auto; }
+  @media (any-hover: hover) { .chapter__text a:hover { color: #0a2fd1; } }
+  @media (max-width: 720px) {
+    .chapter__label { left: 16px; top: 64px; }
+    .chapter__text { right: 16px; left: 16px; width: auto; top: auto; bottom: 6vh; font-size: 14px;
+      background: rgba(255, 255, 255, .9); padding: 12px 14px; }
+  }
+
+
+  /* ---------- Portal (after the story): fly through a cloud of photos ---------- */
+  .portal { position: relative; z-index: 12; height: 520vh; background: var(--paper); }
+  .portal__pin { position: sticky; top: 0; height: 100vh; overflow: hidden; perspective: 1000px; }
+  .portal__world {
+    position: absolute; left: 50%; top: 50%; width: 0; height: 0;
+    transform-style: preserve-3d; will-change: transform;
+  }
+  .portal__tile {
+    position: absolute; left: 0; top: 0; background: #ddd center / cover no-repeat;
+    backface-visibility: hidden; will-change: transform, opacity;
+  }
+  .portal__veil { position: absolute; inset: 0; background: var(--paper); opacity: 0; pointer-events: none; }
+
+  /* ---------- End screen: title, two doors, links ---------- */
+  .portal__choices {
+    position: absolute; inset: 0; display: grid; grid-template-rows: auto 1fr auto;
+    padding: 9vh 6vw 6vh; color: var(--ink); opacity: 0; visibility: hidden;
+  }
+  .doors__title {
+    display: flex; justify-content: center; gap: clamp(18px, 4.6vw, 80px);
+    font-family: var(--name); font-weight: 500; text-transform: uppercase;
+    font-size: clamp(26px, 3vw, 50px); line-height: 1; color: var(--ink);
+  }
+  .doors__stage { position: relative; display: flex; align-items: center; justify-content: center; perspective: 1400px; }
+  /* Two flush squares. Hovering one makes it bigger, in front of the other, and shows its label. */
+  .door {
+    position: relative; display: block; width: min(33vw, 34vh * 1.6, 560px); aspect-ratio: 1;
+    color: #fff; text-decoration: none; background: #f4f4f2;
+    transition: transform .6s cubic-bezier(.2, .8, .2, 1), box-shadow .6s ease;
+  }
+  .door__img { position: absolute; inset: 0; background: center / cover no-repeat; }
+  .door__label {
+    position: absolute; right: 8%; bottom: 7%; text-align: right; pointer-events: none;
+    font-family: var(--name); font-weight: 500; text-transform: uppercase;
+    font-size: clamp(28px, 4.2vw, 76px); line-height: .95; letter-spacing: .01em;
+    text-shadow: 0 6px 30px rgba(0, 0, 0, .35);
+    opacity: 0; transform: translateY(10px); transition: opacity .45s ease, transform .6s cubic-bezier(.2, .8, .2, 1);
+  }
+  .door:hover, .door:focus-visible {
+    z-index: 2; transform: scale(1.18);
+    box-shadow: 0 40px 80px -36px rgba(15, 15, 21, .5);
+  }
+  .door:hover .door__label, .door:focus-visible .door__label { opacity: 1; transform: none; }
+  /* touch screens can't hover, so the labels always show there */
+  @media (any-hover: none) { .door__label { opacity: 1; transform: none; } }
+  .doors__links {
+    display: flex; justify-content: center; flex-wrap: wrap; gap: clamp(28px, 7vw, 130px);
+    font-size: clamp(12px, 1vw, 15px); font-weight: 500; letter-spacing: .08em; text-transform: uppercase;
+  }
+  .doors__links a { color: var(--mute-2); transition: color .25s; }
+  @media (any-hover: hover) { .doors__links a:hover { color: var(--ink); } }
+  @media (max-width: 720px) {
+    .portal__choices { padding: 12vh 20px 5vh; }
+    .doors__stage { flex-direction: column; gap: 0; }
+    .door { width: min(70vw, 340px); }
+    .doors__links { gap: 22px 28px; }
+  }
+
+  @media (max-width: 640px) {
+    .about { padding-top: 96px; }
+    .about__text { margin-top: 56px; }
+    }
+  @media (prefers-reduced-motion: reduce) { .reveal { transition: none; } }
+</style>
+</head>
+<body>
+
+<header class="header">
+  <a class="label roll" href="https://embodiedpredictiveintelligence.vercel.app" target="_blank" rel="noopener"><span data-t="Research">Research</span></a>
+  <a class="header__center" href="#top">Armaan Sharma</a>
+  <a class="label roll header__right" href="#contact" data-contact><span data-t="Contact">Contact</span></a>
+</header>
+
+<div class="name" id="top"><h1>Armaan Sharma</h1></div>
+<canvas id="stage" aria-hidden="true"></canvas>
+
+<main class="spacer" aria-hidden="true"></main>
+
+<section class="about" id="about">
+  <!-- Save a photo as portrait.jpg next to this file and it replaces the grey box -->
+  <div class="portrait reveal">
+    <span>Portrait</span>
+    <img src="portrait.jpg" alt="Armaan Sharma" onerror="this.remove()">
+  </div>
+  <div class="about__text">
+    <p class="reveal">Hi, I'm Armaan. Nice to e-meet you.</p>
+    <p class="reveal">At 14, I got six offers from YC-backed startups, two of which wanted to fly me out to San Francisco. Now I build robots that learn their own bodies, betting that structure beats scale: predictive self-models that learn from a handful of trials instead of mountains of data.</p>
+  </div>
+</section>
+
+<!-- Story chapters are built from STORY in data.js -->
+<div class="chapters"></div>
+
+<!-- Portal: a cloud of photos you fly into as you scroll; ends on the Projects / Awards screen -->
+<section class="portal">
+  <div class="portal__pin">
+    <div class="portal__world" aria-hidden="true"></div>
+    <div class="portal__veil"></div>
+    <div class="portal__choices" id="contact">
+      <h2 class="doors__title" aria-label="Explore"><span>E</span><span>X</span><span>P</span><span>L</span><span>O</span><span>R</span><span>E</span></h2>
+      <div class="doors__stage">
+        <a class="door" href="awards.html" aria-label="Awards">
+          <span class="door__img" style="background-image:url('images/door-awards.jpg')"></span>
+          <span class="door__label">Awards</span>
+        </a>
+        <a class="door" href="projects.html" aria-label="Projects">
+          <span class="door__img" style="background-image:url('images/door-projects.jpg')"></span>
+          <span class="door__label">Projects</span>
+        </a>
+      </div>
+      <nav class="doors__links" aria-label="Elsewhere">
+        <a href="https://linkedin.com/in/armaan-sharma-ai" target="_blank" rel="noopener">LinkedIn</a>
+        <a href="https://github.com/probnotas" target="_blank" rel="noopener">GitHub</a>
+        <a href="mailto:armaansharma2311@gmail.com">Email</a>
+        <a href="https://www.instagram.com/epi_labs" target="_blank" rel="noopener">Instagram</a>
+      </nav>
+    </div>
+  </div>
+</section>
+
+
+
+<script src="data.js"></script>
+<script type="module">
+  import * as THREE from "https://cdnjs.cloudflare.com/ajax/libs/three.js/0.160.0/three.module.min.js";
+
+  const reduced = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  const canvas = document.getElementById("stage");
+  const nameEl = document.querySelector(".name");
+  const headerName = document.querySelector(".header__center");
+  const spacer = document.querySelector(".spacer");
+  const N = HOME_PHOTOS.length;   // one drifting photo per entry
+  const mod = (a, b) => ((a % b) + b) % b;
+  const lerp = (a, b, t) => a + (b - a) * t;
+  const clamp01 = t => Math.min(1, Math.max(0, t));
+  const easeInOut = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+  const easeOut = t => 1 - Math.pow(1 - t, 4);
+
+  let W = innerWidth, H = innerHeight;
+  // How far the photo section scrolls: set by updateGallery() so the about text arrives right after the last photo
+  let galleryLen = H * 2.6, galleryReady = false;
+  const GALLERY = () => galleryLen;
+
+  /* ---------- Textures: real image if given, otherwise painted placeholder art ---------- */
+  function paintArt(w, i) {
+    const cw = 512, ch = Math.round(512 * w.ratio);
+    const c = document.createElement("canvas"); c.width = cw; c.height = ch;
+    const g = c.getContext("2d");
+    const [a, b, hi] = w.palette;
+    const ang = (140 + i * 23) * Math.PI / 180;
+    const lg = g.createLinearGradient(cw / 2 - Math.cos(ang) * cw, ch / 2 - Math.sin(ang) * ch, cw / 2 + Math.cos(ang) * cw, ch / 2 + Math.sin(ang) * ch);
+    lg.addColorStop(0, a); lg.addColorStop(1, b);
+    g.fillStyle = lg; g.fillRect(0, 0, cw, ch);
+    const blob = (x, y, r, col) => {
+      const rg = g.createRadialGradient(x, y, 0, x, y, r);
+      rg.addColorStop(0, col); rg.addColorStop(1, "rgba(0,0,0,0)");
+      g.fillStyle = rg; g.fillRect(0, 0, cw, ch);
+    };
+    blob(cw * (1 - (25 + (i * 37) % 55) / 100), ch * (1 - (20 + (i * 53) % 60) / 200), cw * .7, b);
+    blob(cw * (25 + (i * 37) % 55) / 100, ch * (20 + (i * 53) % 60) / 100, cw * .5, hi);
+    const img = g.getImageData(0, 0, cw, ch), d = img.data;   // film grain
+    for (let p = 0; p < d.length; p += 4) { const n = (Math.random() - .5) * 26; d[p] += n; d[p + 1] += n; d[p + 2] += n; }
+    g.putImageData(img, 0, 0);
+    const t = new THREE.CanvasTexture(c);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  }
+  const textures = HOME_PHOTOS.map((w, i) => {
+    if (!w.img) return paintArt(w, i);
+    const t = new THREE.TextureLoader().load(w.img);
+    t.colorSpace = THREE.SRGBColorSpace;
+    return t;
+  });
+
+  /* ---------- Renderer: perspective camera placed so 1 unit = 1 CSS pixel at z = 0 ---------- */
+  let renderer;
+  try {
+    renderer = new THREE.WebGLRenderer({ canvas, antialias: true, alpha: true });
+  } catch (e) {
+    document.body.classList.add("ready");   // no WebGL: name + about still work
+    throw e;
+  }
+  renderer.setPixelRatio(Math.min(devicePixelRatio, 2));
+  const scene = new THREE.Scene();
+  const camera = new THREE.PerspectiveCamera(45, W / H, 1, 5000);
+  function sizeCamera() {
+    W = innerWidth; H = innerHeight;
+    renderer.setSize(W, H, false);
+    camera.aspect = W / H;
+    camera.position.z = (H / 2) / Math.tan(THREE.MathUtils.degToRad(camera.fov / 2));
+    camera.updateProjectionMatrix();
+    if (galleryReady) updateGallery();   // photos are created further down
+  }
+  sizeCamera();
+
+  // "Watch dial": after the opening, the whole photo field is wrapped onto a horizontal drum of
+  // radius uR. A point's height on screen becomes an angle around the drum, so photos face you flat
+  // in the middle, then curve and roll away toward the top and bottom edges as you scroll, like
+  // spinning a watch crown. Each vertex is bent, so every photo also curves along the drum's surface.
+  // uDial blends from flat (0) to fully wrapped (1).
+  const vert = `
+    uniform float uDial; uniform float uR;
+    varying vec2 vUv;
+    void main() {
+      vUv = uv;
+      vec4 w = modelMatrix * vec4(position, 1.0);
+      float th = w.y / uR;
+      vec3 d = vec3(w.x, uR * sin(th), w.z + uR * (cos(th) - 1.0));
+      gl_Position = projectionMatrix * viewMatrix * vec4(mix(w.xyz, d, uDial), 1.0);
+    }`;
+  const frag = `
+    uniform sampler2D uTex; uniform float uOpacity;
+    varying vec2 vUv;
+    void main() {
+      vec4 c = texture2D(uTex, vUv);
+      gl_FragColor = vec4(c.rgb, c.a * uOpacity);
+      #include <colorspace_fragment>
+    }`;
+  const geo = new THREE.PlaneGeometry(1, 1, 24, 24);
+
+  /* ---------- Scattered layout (fractions of screen; y can run past one screen) ---------- */
+  // One photo per project, each shown exactly once, spaced evenly down the page: [x, y in screen heights, drift speed]
+  const LAYOUT = [
+    [.40, .16, 1.00], [.68, .30, 1.05], [.08, .40, .96], [.88, .52, 1.03],
+    [.30, .70, .98], [.60, .84, 1.04], [.04, .98, 1.00], [.84, 1.10, .97],
+    [.42, 1.26, 1.03], [.14, 1.42, .99], [.70, 1.56, 1.02], [.46, 1.76, 1.00],
+  ];
+
+  const rand = (s => () => (s = (s * 16807) % 2147483647) / 2147483647)(7);
+  const tiles = LAYOUT.slice(0, N).map((L, i) => {
+    const mat = new THREE.ShaderMaterial({
+      vertexShader: vert, fragmentShader: frag, transparent: true, depthTest: false, depthWrite: false,
+      uniforms: { uTex: { value: textures[i] }, uOpacity: { value: 0 }, uDial: { value: 0 }, uR: { value: 1 } },
+    });
+    const mesh = new THREE.Mesh(geo, mat);
+    mesh.renderOrder = i;
+    scene.add(mesh);
+    return {
+      mesh, mat, i, project: i, x: L[0], y: L[1], speed: L[2],
+      // opening: where the photo lands in the loose cluster, and which direction it slides in from
+      pile: { dx: (rand() - .5) * 260, dy: (rand() - .5) * 180, s: .9 + rand() * .15, from: rand() * Math.PI * 2 },
+    };
+  });
+
+  const narrow = () => W < 720;
+  const tileW = () => narrow() ? W * .27 : Math.min(260, Math.max(120, W * .105));
+  const stackW = () => W < 720 ? W * .62 : Math.min(460, W * .22);
+  // Portrait photos (≈3:4) are the baseline; wider ones scale up so they don't look tiny next to them
+  const sizeFactor = i => Math.min(1.75, Math.max(1, Math.sqrt(1.34 / HOME_PHOTOS[i].ratio) * 1.12));
+  const photoW = i => tileW() * sizeFactor(i);
+
+  // Where a tile sits in the scattered layout at scroll position s
+  // on phones the same layout is stretched taller so photos overlap less
+  const YS = () => narrow() ? 1.45 : 1;
+  function scatterPose(t, s) {
+    const tw = photoW(t.i);
+    const y = t.y * YS() * H - s * t.speed;
+    return { x: tw / 2 + t.x * (W - tw), y, w: tw, rz: 0, rx: 0, ry: 0, op: 1, project: t.i };
+  }
+  // The about section follows the last photo with a small gap. A photo's bottom edge is at
+  // y*H + h/2 - s*speed on screen and the about top is at galleryLen - s, so galleryLen must
+  // stay below every photo for the whole scroll; slower photos need proportionally more room.
+  function updateGallery() {
+    const gap = H * .14;
+    galleryLen = Math.max(...tiles.map(t =>
+      (t.y * YS() * H + photoW(t.i) * HOME_PHOTOS[t.i].ratio / 2 + gap) / Math.min(t.speed, 1)));
+    spacer.style.height = galleryLen + "px";
+  }
+  updateGallery();
+  galleryReady = true;
+
+  function pilePose(t) {
+    const sw = stackW() * t.pile.s;
+    return { x: W / 2 + t.pile.dx, y: H / 2 + t.pile.dy, w: sw, rz: 0, rx: 0, ry: 0, op: 1 };
+  }
+  function stackPose() { return { x: W / 2, y: H / 2, w: stackW(), rz: 0, rx: 0, ry: 0, op: 1 }; }
+  function mix(a, b, t) {
+    const o = {};
+    for (const k of ["x", "y", "w", "rz", "rx", "ry", "op"]) o[k] = lerp(a[k], b[k], t);
+    return o;
+  }
+
+  function place(t, p, project) {
+    if (project !== t.project) { t.project = project; t.mat.uniforms.uTex.value = textures[project]; }
+    const h = p.w * HOME_PHOTOS[t.project].ratio;
+    t.mesh.position.set(p.x - W / 2, H / 2 - p.y, 0);
+    t.mesh.rotation.set(p.rx, p.ry, p.rz);
+    t.mesh.scale.set(p.w, h, 1);
+    // photos far past the top/bottom edge would wrap round the back of the drum, so skip them
+    t.mesh.visible = Math.abs(p.y - H / 2) < H * .5 + h * .5 + H * .35;
+    t.mat.uniforms.uOpacity.value = p.op;
+  }
+
+  /* ---------- Opening sequence timing (ms) ---------- */
+  const FLY = 700, FLY_STEP = 90, FLY_DUR = 950;
+  const STACK = FLY + FLY_STEP * N + 700, STACK_DUR = 700;
+  const SPREAD = STACK + STACK_DUR + 450, SPREAD_DUR = 1200, SPREAD_STEP = 35;
+  const INTRO_END = SPREAD + SPREAD_DUR + SPREAD_STEP * N;
+  let t0 = null;
+  const skipIntro = reduced || scrollY > 10;
+
+  let s = scrollY, dial = 0, lastScrollAt = -1e9;
+  // cursor position from -1 (left/top) to 1 (right/bottom), eased slowly so the photos drift rather than jump
+  const LEAN_PX = 18;
+  const leanTarget = { x: 0, y: 0 }, lean = { x: 0, y: 0 };
+  addEventListener("pointermove", e => { leanTarget.x = e.clientX / innerWidth * 2 - 1; leanTarget.y = e.clientY / innerHeight * 2 - 1; }, { passive: true });
+  const DIAL_R = () => H * 1.10;   // drum radius: smaller = tighter wheel, bigger = looser
+  addEventListener("scroll", () => { lastScrollAt = performance.now(); }, { passive: true });
+
+  function frame(now) {
+    if (t0 === null) t0 = now;
+    const el = skipIntro ? INTRO_END : now - t0;
+
+    // smoothed scroll
+    s = reduced ? scrollY : lerp(s, scrollY, .085);
+    lean.x = lerp(lean.x, reduced ? 0 : leanTarget.x, .035);
+    lean.y = lerp(lean.y, reduced ? 0 : leanTarget.y, .035);
+    if (Math.abs(scrollY - s) < .05) s = scrollY;
+    // the dial only appears while the page is moving (scrolling, or still easing to a stop);
+    // once it's at rest the photos ease back to flat
+    const moving = now - lastScrollAt < 160 || Math.abs(scrollY - s) > 1.5;
+    const dialTarget = el >= INTRO_END && moving && !reduced ? 1 : 0;
+    dial = dialTarget ? Math.min(1, dial + .06) : Math.max(0, dial - .035);
+
+    for (const t of tiles) {
+      const sc = scatterPose(t, s);
+      let p, project = sc.project;
+      if (el < STACK) {
+        const k = easeOut(clamp01((el - FLY - t.i * FLY_STEP) / FLY_DUR));
+        const pile = pilePose(t);
+        const far = Math.hypot(W, H) * .75;   // start fully off-screen
+        p = mix({ ...pile, x: pile.x + Math.cos(t.pile.from) * far, y: pile.y + Math.sin(t.pile.from) * far }, pile, k);
+        project = t.i;
+      } else if (el < SPREAD) {
+        p = mix(pilePose(t), stackPose(), easeInOut(clamp01((el - STACK - t.i * 25) / STACK_DUR)));
+        project = t.i;
+      } else {
+        const k = easeInOut(clamp01((el - SPREAD - t.i * SPREAD_STEP) / SPREAD_DUR));
+        p = mix(stackPose(), sc, k);
+        if (k < 1) project = t.i;
+      }
+      // lean a few pixels toward the cursor; each photo moves a slightly different amount for depth
+      const depth = .7 + (t.i % 4) * .15;
+      p = { ...p, x: p.x + lean.x * LEAN_PX * depth, y: p.y + lean.y * LEAN_PX * .6 * depth };
+      place(t, p, project);
+      t.mat.uniforms.uDial.value = easeInOut(dial);
+      t.mat.uniforms.uR.value = DIAL_R();
+    }
+
+    // name drifts up with the scroll; the small header name takes over once it's gone
+    nameEl.style.transform = `translate3d(0, ${-s * .42}px, 0)`;
+    headerName.classList.toggle("show", s > H * 1.15);
+
+    // stop drawing once the about section fully covers the photos
+    // fade the photos out as the bio arrives: starts when the bio's top is 90% down the screen,
+    // done by the time it's 35% down (the bio's top sits at GALLERY() - s on screen)
+    const fade = clamp01((GALLERY() - s - H * .35) / (H * .55));
+    canvas.style.opacity = fade;
+    canvas.style.visibility = fade > 0 ? "visible" : "hidden";
+    if (fade > 0) renderer.render(scene, camera);
+    requestAnimationFrame(frame);
+  }
+
+  document.fonts.ready.then(() => {
+    document.body.classList.add("ready");
+    requestAnimationFrame(frame);
+  });
+
+  let rt;
+  addEventListener("resize", () => { clearTimeout(rt); rt = setTimeout(sizeCamera, 120); });
+
+  /* ---------- Hover + click on photos (raycast, since the canvas ignores pointer events) ---------- */
+  const ray = new THREE.Raycaster(), ptr = new THREE.Vector2();
+  function hit(e) {
+    if (e.target.closest && e.target.closest("a, button, input, textarea, .about, .portal")) return null;
+    if (scrollY > GALLERY()) return null;
+    ptr.set(e.clientX / W * 2 - 1, -(e.clientY / H) * 2 + 1);
+    ray.setFromCamera(ptr, camera);
+    const hits = ray.intersectObjects(tiles.map(t => t.mesh));
+    if (!hits.length) return null;
+    const top = hits.sort((a, b) => b.object.renderOrder - a.object.renderOrder)[0];
+    return tiles.find(t => t.mesh === top.object);
+  }
+  // home photos are just pictures (not projects), so they don't open anything when clicked
+</script>
+
+<script>
+  // Reveal the about text as it scrolls in
+  const io = new IntersectionObserver(items => items.forEach(it => {
+    if (it.isIntersecting) { it.target.classList.add("in"); io.unobserve(it.target); }
+  }), { rootMargin: "0px 0px -12% 0px" });
+  document.querySelectorAll(".reveal").forEach(el => io.observe(el));
+
+  // Contact scrolls to the very end of the page, where the links are
+  const reducedMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+  document.querySelector("[data-contact]").addEventListener("click", e => {
+    e.preventDefault();
+    scrollTo({ top: document.documentElement.scrollHeight, behavior: reducedMotion ? "auto" : "smooth" });
+  });
+  document.querySelector(".header__center").addEventListener("click", e => {
+    e.preventDefault(); scrollTo({ top: 0, behavior: reducedMotion ? "auto" : "smooth" });
+  });
+  if (location.hash === "#contact") setTimeout(() => scrollTo(0, document.documentElement.scrollHeight), 80);
+
+</script>
+
+<script>
+  /* ================= Story chapters =================
+     Scroll distance through each pinned chapter is measured in screen heights (u):
+       0    – 1.3   the deck rises from below as a cascade (scroll-driven)
+       at 1.3       the cascade snaps into a tight stack by itself (timed); scrolling back reopens it
+       1.6  – 2.1   label (left) and story text (right) fade in
+       2.4  onward  each further 0.8 screens swipes the top photo away, alternating left / right,
+                    and the side text switches to the photo now on top                          */
+  (() => {
+    const wrap = document.querySelector(".chapters");
+    const about = document.querySelector(".about");
+    const portrait = about && about.querySelector(".portrait");
+    const reducedMo = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const clamp01 = t => Math.min(1, Math.max(0, t));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    const ease = t => t < .5 ? 4 * t * t * t : 1 - Math.pow(-2 * t + 2, 3) / 2;
+    const seg = (u, a, b) => clamp01((u - a) / (b - a));
+    // HOLD: bio stays pinned; the deck waits for ~3s of active scrolling (GATE_MS), then slides up slowly
+    //       (PEEK_MS) until its top photo rests on the bio's second-to-last line
+    // RISE: after the hold, scrolling carries the bio away and the deck up into its stack (slower than before)
+    const HOLD = 1.6, RISE_LEN = 2.0, RISE = HOLD + RISE_LEN;   // HOLD: how long (in screens of scrolling) the bio stays stuck
+    const TXT_IN = RISE + .3, TXT_DUR = .5, SWIPE_START = TXT_IN + .8, SWIPE_LEN = .8, END_HOLD = .6;
+    const GATE_MS = 3000, PEEK_MS = 2600;
+    const SNAP_MS = 850, SWAP_OUT = 150, SWAP_IN = 260;
+
+    // A deck card's photo: its WORKS project if it names one, otherwise its own img / palette.
+    // Clicking opens that project, or a panel built from the card itself.
+    function cardItem(card) {
+      const w = card.photo && WORKS.find(x => x.id === card.photo);
+      const [title, when = ""] = card.label.split(" · ");
+      const own = { id: title, title, cat: "Story", year: when, ratio: 1.33, text: card.text.join(" ").replace(/<[^>]+>/g, ""),
+                    palette: card.palette || ["#222", "#666", "#ddd"], img: card.img };
+      // a card's own photo wins, both on the card and in the panel it opens
+      return { card, art: w && !card.img ? w : own, artIndex: w ? WORKS.indexOf(w) : 3,
+               opens: w ? { ...w, img: card.img || w.img } : own };
+    }
+
+    const chapters = STORY.map(ch => {
+      const items = ch.deck.map(cardItem).reverse();   // bottom → top; the cover is last (on top)
+      const n = items.length;
+      const el = document.createElement("section");
+      el.className = "chapter"; el.id = ch.id;
+      el.setAttribute("aria-label", ch.title);
+      // pinned length = time to reach the swipes + one swipe per photo (the last one stays) + a short hold
+      el.style.height = (SWIPE_START + (n - 1) * SWIPE_LEN + END_HOLD + 1) * 100 + "vh";
+      el.innerHTML = `<div class="chapter__pin">
+          ${items.map((it, k) => `<div class="chapter__card" data-k="${k}" style="z-index:${2 + k}">
+              <div style="${artStyle(it.art, it.artIndex)}"></div></div>`).join("")}
+          <p class="chapter__label"></p>
+          <div class="chapter__text"></div>
+        </div>`;
+      wrap.appendChild(el);
+      const c = {
+        ch, el, items, n,
+        cards: [...el.querySelectorAll(".chapter__card")],
+        pin: el.querySelector(".chapter__pin"),
+        label: el.querySelector(".chapter__label"),
+        text: el.querySelector(".chapter__text"),
+        u: 0, stackT: 0, peekT: 0, gateMs: 0, peekY: innerHeight * .7,
+        shown: -1, swapAt: 0, pendingIdx: n - 1, active: n - 1,
+      };
+      const open = () => openProject(c.items[c.active].opens);
+      c.cards.forEach((card, k) => card.addEventListener("click", () => { if (k === c.active) open(); }));
+      setCopy(c, n - 1);
+      return c;
+    });
+
+    function setCopy(c, idx) {
+      const { label, text } = c.items[idx].card;
+      c.label.textContent = label;
+      c.text.innerHTML = text.map(t => `<p>${t}</p>`).join("");
+      c.shown = idx;
+    }
+
+    function layout(c, u, now) {
+      const W = innerWidth, H = innerHeight, n = c.n, narrow = W < 720;
+      let cw = narrow ? W * .64 : Math.min(W * .336, 700);
+      cw = Math.min(cw, H * .8 / 1.357);
+      const chh = cw * 1.357;
+      const Tf = (H - chh) / 2 - H * .012;              // resting top of the front photo
+
+      // peek (timed) → rise (scroll-driven, eases out) → stack (timed snap)
+      const peek = ease(c.peekT);
+      // During the rise the deck travels up with the bio (its top edge stays near the 2nd-last line)
+      // at a steady pace, keeping its spread; it only closes up in the last part of the rise.
+      const pa = ease(seg(u, HOLD + RISE_LEN * .7, RISE)), pb = ease(c.stackT);
+      const G0 = H * .26;
+      const G = lerp(lerp(G0, H * .07, pa), H * .009, pb);
+      const gapSum = d => G * (1 - Math.pow(.82, d)) / .18;
+      const cascade0 = G0 * (1 - Math.pow(.82, n - 1)) / .18;     // cover → top photo, at full spread
+      const yHidden = H + cascade0 + 40;                           // whole cascade below the screen
+      const yPeek = c.peekY + cascade0;                            // top photo resting on the 2nd-last line
+      const travel = Math.max(0, yPeek - Tf);                      // how far the cover climbs to its spot
+      const off = Math.max(0, u - HOLD) * H;                       // page scrolled since the hold ended
+      const yLast = lerp(yHidden, yPeek, peek) - Math.min(travel, off * travel / (RISE_LEN * H * .85));
+
+      // swipes: j = 0 is the cover (top photo); even swipes go left, odd go right
+      const q = [];
+      let gone = 0;
+      for (let j = 0; j < n - 1; j++) {
+        q[j] = ease(seg(u, SWIPE_START + j * SWIPE_LEN, SWIPE_START + (j + 1) * SWIPE_LEN));
+        gone += q[j];
+      }
+      q[n - 1] = 0;                                      // the last photo stays
+
+      c.cards.forEach((card, k) => {
+        const j = n - 1 - k;                             // swipe order / distance from the top
+        const dir = j % 2 === 0 ? -1 : 1;
+        const t = q[j];
+        const depth = Math.max(0, j - gone);             // remaining photos settle forward as others leave
+        const jitter = ((k * 7) % 11 - 5) * (1 - pb);
+        const x = -cw / 2 + jitter + dir * t * (W / 2 + cw * .95) + deckLean.x * 22;
+        const y = yLast - gapSum(depth) + t * H * .04 + deckLean.y * 10;
+        const rot = -dir * t * 11;                       // tilts away as it's thrown
+        card.style.width = cw + "px"; card.style.height = chh + "px";
+        card.style.transform = `translate3d(${x}px, ${y}px, 0) rotate(${rot}deg)`;
+        card.style.visibility = t >= 1 ? "hidden" : "visible";
+      });
+
+      // which photo is on top now; swap the side copy with a quick fade
+      const active = n - 1 - q.filter(v => v >= .5).length;
+      c.active = active;
+      if (active !== c.pendingIdx) { c.pendingIdx = active; c.swapAt = now; }
+      let f = 1;
+      if (c.pendingIdx !== c.shown) {
+        const e = now - c.swapAt;
+        if (e < SWAP_OUT && !reducedMo) f = 1 - e / SWAP_OUT;
+        else { setCopy(c, c.pendingIdx); c.swapAt = now - SWAP_OUT; f = 0; }
+      } else if (now - c.swapAt < SWAP_OUT + SWAP_IN && !reducedMo) {
+        f = clamp01((now - c.swapAt - SWAP_OUT) / SWAP_IN);
+      }
+
+      const tTxt = ease(seg(u, TXT_IN, TXT_IN + TXT_DUR)) * f;
+      c.label.style.opacity = c.text.style.opacity = tTxt;
+      c.text.style.visibility = tTxt > .05 ? "visible" : "hidden";
+      c.label.style.transform = `translateY(calc(-50% + ${(1 - tTxt) * 16}px))`;
+      c.text.style.transform = narrow ? `translateY(${(1 - tTxt) * 16}px)` : `translateY(calc(-50% + ${(1 - tTxt) * 16}px))`;
+
+    }
+
+    // Pin the bio where its portrait sits just under the top of the screen, and start the first
+    // chapter exactly there, so the deck begins rising the moment the bio stops moving.
+    // The bio stops with its portrait + text block centred on screen (falls back to just under the
+    // header if the block is taller than the screen).
+    function pinAbout() {
+      if (!about || !chapters.length) return;
+      const text = about.querySelector(".about__text");
+      const blockH = text.offsetTop + text.offsetHeight - portrait.offsetTop;
+      const screenTop = Math.max(8, (innerHeight - blockH) / 2);
+      const pin = portrait.offsetTop - screenTop;
+      about.style.top = -pin + "px";
+      chapters[0].el.style.marginTop = -(about.offsetHeight - pin) + "px";
+    }
+    pinAbout();
+    document.fonts.ready.then(pinAbout);
+    addEventListener("resize", pinAbout);
+
+    // top of the bio's second-to-last line, on screen (the bio is pinned, so this holds still)
+    function secondLastLineTop() {
+      const ps = about.querySelectorAll(".about__text p");
+      const range = document.createRange();
+      range.selectNodeContents(ps[ps.length - 1]);
+      const tops = [...range.getClientRects()].map(r => Math.round(r.top))
+        .sort((a, b) => a - b).filter((t, i, a) => i === 0 || t - a[i - 1] > 4);
+      return tops.length > 1 ? tops[tops.length - 2] : (tops[0] ?? innerHeight * .7);
+    }
+    let lastScrollAt = -1e9;
+    addEventListener("scroll", () => { lastScrollAt = performance.now(); }, { passive: true });
+
+    let last = performance.now();
+    // the deck drifts slowly toward the cursor (at most ~22px sideways, ~10px up/down)
+    const deckLeanTarget = { x: 0, y: 0 }, deckLean = { x: 0, y: 0 };
+    addEventListener("pointermove", e => { deckLeanTarget.x = e.clientX / innerWidth * 2 - 1; deckLeanTarget.y = e.clientY / innerHeight * 2 - 1; }, { passive: true });
+    function tick(now) {
+      deckLean.x = lerp(deckLean.x, reducedMo ? 0 : deckLeanTarget.x, .04);
+      deckLean.y = lerp(deckLean.y, reducedMo ? 0 : deckLeanTarget.y, .04);
+      const H = innerHeight, dt = Math.min(64, now - last); last = now;
+      chapters.forEach(c => {
+        const r = c.el.getBoundingClientRect();
+        const target = Math.max(0, Math.min(-r.top, r.height - H)) / H;
+        c.u = reducedMo ? target : lerp(c.u, target, .12);
+        // deck waits for ~3s of active scrolling while the bio is pinned, then peeks up slowly;
+        // reaching the end of the hold triggers it anyway (and quicker) so nobody gets stuck
+        if (c.u <= .002) c.gateMs = 0;
+        else if (c.u < HOLD && now - lastScrollAt < 150) c.gateMs += dt;
+        const triggered = c.gateMs >= GATE_MS || c.u >= HOLD;
+        c.peekT = reducedMo ? (triggered ? 1 : 0)
+          : triggered ? Math.min(1, c.peekT + dt / (c.u >= HOLD ? 500 : PEEK_MS)) : Math.max(0, c.peekT - dt / 700);
+        if (about && c === chapters[0] && c.u <= HOLD) c.peekY = secondLastLineTop();
+        // the stack forms on its own once the cascade reaches its resting place
+        const want = c.u >= RISE ? 1 : 0;
+        c.stackT = reducedMo ? want : want ? Math.min(1, c.stackT + dt / SNAP_MS) : Math.max(0, c.stackT - dt / SNAP_MS);
+        if (r.bottom > -H && r.top < H * 2) layout(c, c.u, now);
+      });
+      // the pinned bio fades out underneath as the deck rises over it
+      if (about && chapters.length) {
+        // after the hold the bio scrolls away normally, fading as it goes
+        const off = Math.max(0, chapters[0].u - HOLD) * H;
+        about.style.transform = off ? `translate3d(0, ${-off}px, 0)` : "";
+        const fadeOut = 1 - ease(seg(chapters[0].u, HOLD + .25, HOLD + 1));
+        about.style.opacity = fadeOut;
+        about.style.visibility = fadeOut > .01 ? "visible" : "hidden";
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  })();
+</script>
+
+<script>
+  /* ================= Portal =================
+     Photos sit at random depths in a loose cloud in front of the camera. Scrolling through the
+     pinned section moves the camera forward (the whole world slides toward the viewer), so the
+     cloud grows from a small cluster, opens up and streams past the edges. The last stretch fades
+     to white and lands on the end screen: Projects, Awards and the links. */
+  (() => {
+    const section = document.querySelector(".portal");
+    const world = section.querySelector(".portal__world");
+    const veil = section.querySelector(".portal__veil");
+    const choices = section.querySelector(".portal__choices");
+    const reducedMo = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const clamp01 = t => Math.min(1, Math.max(0, t));
+    const lerp = (a, b, t) => a + (b - a) * t;
+    // NEAR: how far away the closest photo starts (bigger = smaller cluster at the start)
+    const PERSP = 1000, NEAR = 3200, DEPTH = 12000, COUNT = 54;
+
+    // every photo already on the site (home gallery + story cards), reused to fill the cloud
+    const sources = [
+      ...HOME_PHOTOS.map(p => ({ img: p.img, ratio: p.ratio })),
+      ...STORY.flatMap(ch => ch.deck).filter(d => d.img).map(d => ({ img: d.img, ratio: 1.33 })),
+    ];
+    const rand = (seed => () => (seed = (seed * 16807) % 2147483647) / 2147483647)(11);
+    const tiles = Array.from({ length: COUNT }, (_, i) => {
+      const src = sources[i % sources.length];
+      const w = 150 + rand() * 170;
+      const h = w * Math.min(1.45, Math.max(.6, src.ratio));
+      const angle = rand() * Math.PI * 2;
+      const radius = Math.pow(rand(), .7);                 // 0..1, denser toward the middle
+      const z = -(NEAR + (i / COUNT) * (DEPTH - NEAR) + rand() * 300);
+      const el = document.createElement("div");
+      el.className = "portal__tile";
+      el.style.cssText = `width:${w}px;height:${h}px;background-image:url('${src.img}')`;
+      world.appendChild(el);
+      return { el, w, h, angle, radius, z, tilt: (rand() - .5) * 10 };
+    });
+
+    let p = 0;
+    const lean = { x: 0, y: 0 }, leanT = { x: 0, y: 0 };
+    addEventListener("pointermove", e => { leanT.x = e.clientX / innerWidth * 2 - 1; leanT.y = e.clientY / innerHeight * 2 - 1; }, { passive: true });
+
+    function tick() {
+      const W = innerWidth, H = innerHeight;
+      const r = section.getBoundingClientRect();
+      if (r.bottom > -H && r.top < H * 2) {
+        const target = clamp01(-r.top / (r.height - H));
+        p = reducedMo ? target : lerp(p, target, .09);
+        lean.x = lerp(lean.x, reducedMo ? 0 : leanT.x, .04);
+        lean.y = lerp(lean.y, reducedMo ? 0 : leanT.y, .04);
+
+        // camera speeds up as you go deeper, like being pulled in
+        const q = clamp01(p / .8);
+        const cam = DEPTH * (q * .35 + q * q * .65);
+        const spread = Math.max(W, H) * .8;
+        world.style.transform = `translate3d(${lean.x * -30}px, ${lean.y * -20}px, 0) rotateY(${lean.x * 3}deg) rotateX(${-lean.y * 2}deg)`;
+
+        for (const t of tiles) {
+          const zEff = t.z + cam;                           // distance in front of the camera (negative)
+          const near = clamp01((PERSP - 120 - zEff) / 500); // fades out just before passing the camera
+          const far = clamp01((zEff + DEPTH + 600) / 1500); // the farthest few fade in out of the distance
+          const o = near * far;
+          if (o <= 0.002) { t.el.style.visibility = "hidden"; continue; }
+          t.el.style.visibility = "visible";
+          t.el.style.opacity = o;
+          const x = Math.cos(t.angle) * t.radius * spread, y = Math.sin(t.angle) * t.radius * spread * .7;
+          t.el.style.transform = `translate3d(${x - t.w / 2}px, ${y - t.h / 2}px, ${zEff}px) rotate(${t.tilt}deg)`;
+        }
+        // fly-through ends at p=.8, the photos clear to white by .88, then the end screen fades in and holds
+        veil.style.opacity = clamp01((p - .72) / .16);
+        const doors = clamp01((p - .86) / .08);
+        choices.style.opacity = doors;
+        choices.style.visibility = doors > .02 ? "visible" : "hidden";
+        choices.style.transform = `translateY(${(1 - doors) * 24}px)`;
+      }
+      requestAnimationFrame(tick);
+    }
+    requestAnimationFrame(tick);
+  })();
+</script>
+</body>
+</html>

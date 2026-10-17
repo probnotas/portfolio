@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1220" viewBox="0 0 900 1220">
+  <!-- Original cover artwork for an EPI Labs technical report -->
+  <defs><filter id="g"><feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2"/><feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .05 0"/></filter></defs>
+  <rect width="900" height="1220" fill="#121214"/>
+  <text x="70" y="120" font-family="Menlo, monospace" font-size="24" fill="#7d7d88" letter-spacing="4">EPI LABS · TECHNICAL REPORT</text>
+  <line x1="330" y1="330" x2="570" y2="330" stroke="#f2efe8" stroke-width="3"/>
+  <path d="M 579.7871376374779 729.4437368439644 A 420 420 0 0 0 320.21286236252206 729.4437368439644" fill="none" stroke="#7aa7ff" stroke-width="2" stroke-dasharray="6 10" opacity=".7"/>
+  <line x1="450" y1="330" x2="320.21286236252206" y2="729.4437368439644" stroke="#f2efe8" stroke-width="3"/>
+  <circle cx="450" cy="330" r="9" fill="#f2efe8"/>
+  <circle cx="320.21286236252206" cy="729.4437368439644" r="46" fill="#7aa7ff"/>
+  <text x="70" y="900" font-family="Helvetica Neue, Arial, sans-serif" font-size="62" font-weight="500" fill="#f2efe8" letter-spacing="-1">The Planner</text><text x="70" y="974" font-family="Helvetica Neue, Arial, sans-serif" font-size="62" font-weight="500" fill="#f2efe8" letter-spacing="-1">Hides the Model</text>
+  <text x="70" y="1088" font-family="Helvetica Neue, Arial, sans-serif" font-size="28" fill="#9a9aa6">Rung 1 · August 2026</text>
+  <rect width="900" height="1220" filter="url(#g)"/>
+</svg>

@@ -1,0 +1,51 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="900" height="1220" viewBox="0 0 900 1220">
+  <!-- Original artwork for the PiClaw story card: a terminal setting up PiClaw on a 32MB machine -->
+  <defs>
+    <radialGradient id="glow" cx="50%" cy="38%" r="70%">
+      <stop offset="0" stop-color="#1d2b22"/>
+      <stop offset="1" stop-color="#0b0d0c"/>
+    </radialGradient>
+    <filter id="grain">
+      <feTurbulence type="fractalNoise" baseFrequency=".9" numOctaves="2" stitchTiles="stitch"/>
+      <feColorMatrix values="0 0 0 0 1  0 0 0 0 1  0 0 0 0 1  0 0 0 .06 0"/>
+    </filter>
+    <linearGradient id="bar" x1="0" x2="1">
+      <stop offset="0" stop-color="#7cf0a8"/>
+      <stop offset="1" stop-color="#3fbf74"/>
+    </linearGradient>
+  </defs>
+
+  <rect width="900" height="1220" fill="url(#glow)"/>
+
+  <!-- wordmark -->
+  <text x="450" y="300" text-anchor="middle" font-family="Menlo, SFMono-Regular, monospace" font-size="118" font-weight="700" fill="#7cf0a8" letter-spacing="-4">PiClaw</text>
+  <text x="450" y="362" text-anchor="middle" font-family="Helvetica Neue, Arial, sans-serif" font-size="30" fill="#c9d6cd" letter-spacing="1">a lightweight OpenClaw for everyone</text>
+
+  <!-- terminal window -->
+  <g transform="translate(110 470)">
+    <rect width="680" height="470" rx="18" fill="#0f1411" stroke="#2a3a30" stroke-width="2"/>
+    <rect width="680" height="56" rx="18" fill="#17201a"/>
+    <rect y="38" width="680" height="18" fill="#17201a"/>
+    <circle cx="34" cy="28" r="9" fill="#e5675a"/>
+    <circle cx="62" cy="28" r="9" fill="#e9b949"/>
+    <circle cx="90" cy="28" r="9" fill="#5fc06f"/>
+    <text x="340" y="36" text-anchor="middle" font-family="Menlo, monospace" font-size="20" fill="#6f8577">piclaw — 32MB</text>
+
+    <g font-family="Menlo, SFMono-Regular, monospace" font-size="25">
+      <text x="36" y="118" fill="#7cf0a8">$ <tspan fill="#e8efe9">piclaw setup</tspan></text>
+      <text x="36" y="170" fill="#8fa296">checking hardware…</text>
+      <text x="36" y="214" fill="#e8efe9">  RAM        32 MB  <tspan fill="#7cf0a8">✓</tspan></text>
+      <text x="36" y="256" fill="#e8efe9">  model      lite   <tspan fill="#7cf0a8">✓</tspan></text>
+      <text x="36" y="298" fill="#e8efe9">  assistant  ready  <tspan fill="#7cf0a8">✓</tspan></text>
+      <text x="36" y="366" fill="#8fa296">automating tasks</text>
+    </g>
+    <rect x="36" y="388" width="608" height="18" rx="9" fill="#1d2a22"/>
+    <rect x="36" y="388" width="395" height="18" rx="9" fill="url(#bar)"/>
+    <text x="644" y="440" text-anchor="end" font-family="Menlo, monospace" font-size="22" fill="#7cf0a8">65%</text>
+  </g>
+
+  <!-- footer line -->
+  <text x="450" y="1080" text-anchor="middle" font-family="Helvetica Neue, Arial, sans-serif" font-size="26" fill="#6f8577" letter-spacing="6">RUNS ON ANY HARDWARE · 32MB RAM</text>
+
+  <rect width="900" height="1220" filter="url(#grain)"/>
+</svg>
